@@ -1,0 +1,1 @@
+python infnet.py --load_model False --train ../data/twpos-data-v0.3/oct27.splits/oct27.traindev.proc.cnn --dev ../data/twpos-data-v0.3/oct27.splits/oct27.test.proc.cnn --test ../data/twpos-data-v0.3/daily547.proc.cnn --embedding ../data/wordvects.tw100w5-m40-it2.txt --model ./tmp/git-try
