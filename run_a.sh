@@ -1,1 +1,1 @@
-python infnet.py --load_model False --train ../data/twpos-data-v0.3/oct27.splits/oct27.traindev.proc.cnn --dev ../data/twpos-data-v0.3/oct27.splits/oct27.test.proc.cnn --test ../data/twpos-data-v0.3/daily547.proc.cnn --embedding ../data/wordvects.tw100w5-m40-it2.txt --model ./tmp/git-try
+python infnet.py --load_model False --train ./data/ner-data/eng.train.bioes.conll --dev ./data/ner-data/eng.dev.bioes.conll  --test ./data/ner-data/eng.test.bioes.conll --embedding /share/data/speech/Data/zeweichu/GloVe/glove.6B.100d.txt --model ../checkpoint/git_try

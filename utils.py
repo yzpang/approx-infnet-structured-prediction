@@ -16,7 +16,7 @@ from options import load_arguments
 
 
 
-# load data
+### load data
 
 def load_sent(path, max_size=4):
     data = []
@@ -25,17 +25,6 @@ def load_sent(path, max_size=4):
             tmp = line.split()
             data.append(tmp)
     return data
-
-
-root_ner = "./data/ner-data/"
-#root_ner = "../../data/ner/ner_data_richard/"
-
-dev_data = load_sent(root_ner+"eng.dev.bioes.conll")
-train_data = load_sent(root_ner+"eng.train.bioes.conll")
-test_data = load_sent(root_ner+"eng.test.bioes.conll")
-
-
-
 
 
 
@@ -59,10 +48,6 @@ def load_embedding(emb_file):
             except:
                 print(len(embedding2id))
     return embedding2id,id2embedding, embedding_old
-
-embedding2id, id2embedding, embedding_old = load_embedding("/share/data/speech/Data/zeweichu/GloVe/glove.6B.100d.txt") # change embedding_global
-#embedding2id, id2embedding, embedding_old = load_embedding("../../GloVe/glove.6B.100d.txt") 
-#embedding2id, id2embedding, embedding_old = load_embedding("/share/data/speech/Data/zeweichu/GloVe/glove.6B.100d.txt") # change embedding_global
 
 
 
