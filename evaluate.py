@@ -3,6 +3,9 @@ import re
 import sys
 import time
 import os
+import os.path
+import string
+import subprocess
 
 import numpy as np
 from scipy import stats, spatial
@@ -16,8 +19,8 @@ from utils import *
 
 
 
-def evaluate_tlm(sess, model, x, y, pos, chunk, case, num, word2id, tag2id, pos2id, chunk2id, batch_size):
-    batches, _ = get_batches(x, y, pos, chunk, case, num, word2id, tag2id, pos2id, chunk2id, batch_size)
+def evaluate_tlm(sess, model, x, y, pos, chunk, case, num, word2id, char2id, tag2id, pos2id, chunk2id, batch_size):
+    batches, _ = get_batches(x, y, pos, chunk, case, num, word2id, char2id, tag2id, pos2id, chunk2id, batch_size)
     tot_loss_0, tot_loss_1, tot_loss_2, tot_loss_0_reverse, tot_loss_1_reverse, tot_loss_2_reverse, n_words = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0
 
     for batch in batches:
@@ -62,9 +65,9 @@ def evaluate_tlm(sess, model, x, y, pos, chunk, case, num, word2id, tag2id, pos2
 
 
 
-def evaluate(sess, model, x, y, pos, chunk, case, num, word2id, tag2id, pos2id, chunk2id, batch_size):
+def evaluate(sess, model, x, y, pos, chunk, case, num, word2id, char2id, tag2id, pos2id, chunk2id, batch_size):
     probs = []
-    batches, _ = get_batches(x, y, pos, chunk, case, num, word2id, tag2id, pos2id, chunk2id, batch_size)
+    batches, _ = get_batches(x, y, pos, chunk, case, num, word2id, char2id, tag2id, pos2id, chunk2id, batch_size)
     
     y = []
     
@@ -124,9 +127,9 @@ def evaluate(sess, model, x, y, pos, chunk, case, num, word2id, tag2id, pos2id, 
 
 
 
-def evaluate_print(sess, model, x, y, pos, chunk, case, num, word2id, tag2id, pos2id, chunk2id, batch_size):
+def evaluate_print(sess, model, x, y, pos, chunk, case, num, word2id, char2id, tag2id, pos2id, chunk2id, batch_size):
     probs = []
-    batches, _ = get_batches(x, y, pos, chunk, case, num, word2id, tag2id, pos2id, chunk2id, batch_size)
+    batches, _ = get_batches(x, y, pos, chunk, case, num, word2id, char2id, tag2id, pos2id, chunk2id, batch_size)
     y = []
     
     same = 0
@@ -188,9 +191,9 @@ def evaluate_print(sess, model, x, y, pos, chunk, case, num, word2id, tag2id, po
 
 
 
-def evaluate_print(sess, model, x, y, pos, chunk, case, num, word2id, tag2id, pos2id, chunk2id, batch_size):
+def evaluate_print(sess, model, x, y, pos, chunk, case, num, word2id, char2id, tag2id, pos2id, chunk2id, batch_size):
     probs = []
-    batches, _ = get_batches(x, y, pos, chunk, case, num, word2id, tag2id, pos2id, chunk2id, batch_size)
+    batches, _ = get_batches(x, y, pos, chunk, case, num, word2id, char2id, tag2id, pos2id, chunk2id, batch_size)
     y = []
     
     same = 0
@@ -246,7 +249,10 @@ def evaluate_print(sess, model, x, y, pos, chunk, case, num, word2id, tag2id, po
 
 
 
-def comnpute_f1(probs_test, batches_test, acc_y_test, acc_y_hat_test):
+def compute_f1(probs_test, batches_test, acc_y_test, acc_y_hat_test, id2x):
+    id2word = id2x[0]
+    id2pos = id2x[1]
+    id2tag = id2x[2]
     store_lst = []
     for bn in range(len(batches_test)):
         batch = batches_test[bn]

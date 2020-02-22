@@ -23,7 +23,7 @@ from evaluate import *
 class InfNet_TLM(object):
     
     # dim_h 100, tag_size 28
-    def __init__(self, dim_h, tag_size, pos_size, chunk_size, vocab_size):
+    def __init__(self, dim_h, tag_size, pos_size, chunk_size, vocab_size, embeddings, args):
 
         dim_emb = 100
         beta1, beta2 = 0.9, 0.999
@@ -59,6 +59,12 @@ class InfNet_TLM(object):
         
         self.perturb = tf.placeholder(tf.float32, [None, None], name='perturb')
     
+
+
+        embedding_global = embeddings[0]
+        embedding_char_global = embeddings[1]
+        batch_size = args.batch_size
+
         embedding_model = tf.get_variable('embedding', initializer=embedding_global.astype(np.float32))
         
         embedding_model_char = tf.get_variable('embedding_char', initializer=embedding_char_global.astype(np.float32))
@@ -479,8 +485,8 @@ class InfNet_TLM(object):
 
 
 
-def create_model_infnet_tlm(sess, dim_h, n_tag, n_pos, n_chunk, vocab_size, load_model=False, model_path=''):
-    model = InfNet_TLM(dim_h, n_tag, n_pos, n_chunk, vocab_size)
+def create_model_infnet_tlm(sess, dim_h, n_tag, n_pos, n_chunk, vocab_size, embeddings, load_model, model_path, args):
+    model = InfNet_TLM(dim_h, n_tag, n_pos, n_chunk, vocab_size, embeddings, args)
     if load_model:
         print('Loading model from ...')
         model.saver.restore(sess, model_path)

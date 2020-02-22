@@ -27,14 +27,17 @@ def load_arguments():
 
     argparser.add_argument('--batch_size', type=int, default=1)
     argparser.add_argument('--max_epochs', type=int, default=150)
-    a
-    rgparser.add_argument('--dropout', type=float, default=0.6) # keep prob
+    argparser.add_argument('--dropout', type=float, default=0.6) # keep prob
 
     argparser.add_argument('--dim_h', type=int, default=128)
     argparser.add_argument('--dim_emb', type=int, default=100)
     argparser.add_argument('--learning_rate', type=float, default=0.0003)
 
     argparser.add_argument('--steps_per_checkpoint', type=int, default=3000)
+    argparser.add_argument('--num_theta_steps', type=int, default=5)
+
+    argparser.add_argument('--lambda', type=float, default=1.0)   
+
 
 
     args = argparser.parse_args()

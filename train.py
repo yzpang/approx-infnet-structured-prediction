@@ -33,15 +33,15 @@ import tensorflow.compat.v1 as tf
 
 if __name__ == '__main__':
     args = load_arguments()
-
-    print('loaded arguments')
-
+    print('arguments loaded')
 
     train_data = load_sent(args.train)
     dev_data = load_sent(args.dev)
     test_data = load_sent(args.test)
+    print('data loaded')
 
-    embedding2id, id2embedding, embedding_old = load_embedding(args.embedding) # change embedding_global
+    embedding2id, id2embedding, embedding_old = load_embedding(args.embedding) # change xr
+    print('embeddings loaded')
 
     tag2id, id2tag = convert_tag_to_id(train_data+dev_data+test_data, 3)
     pos2id, id2pos = convert_tag_to_id(train_data+dev_data+test_data, 1)
@@ -50,6 +50,7 @@ if __name__ == '__main__':
     train_data = preprocess_data_according_to_rules(train_data, embedding_old)
     dev_data = preprocess_data_according_to_rules(dev_data, embedding_old)
     test_data = preprocess_data_according_to_rules(test_data, embedding_old)
+    print('data preprocessed (1/2)')
 
     word2id, id2word = construct_word_id(train_data+dev_data+test_data) 
 
@@ -58,7 +59,7 @@ if __name__ == '__main__':
     x_train, y_train, pos_train, chunk_train, case_train, num_train = turn_data_into_x_y(train_data, word2id)
     x_dev, y_dev, pos_dev, chunk_dev, case_dev, num_dev = turn_data_into_x_y(dev_data, word2id)
     x_test, y_test, pos_test, chunk_test, case_test, num_test = turn_data_into_x_y(test_data, word2id)
-
+    print('data preprocessed (2/2)')
 
 
 
@@ -68,14 +69,16 @@ if __name__ == '__main__':
     char2id = {}
     for x in all_chars:
         char2id[x] = all_chars.index(x)
-    embedding_char_global = construct_embedding_char()
-
+    embedding_char_global = construct_embedding_char(id2char)
+    print('character info initiated')
 
 
     x_train_full = x_train
     y_train_full = y_train
 
 
+
+    embeddings = [embedding_global, embedding_char_global]
 
 
 
@@ -106,12 +109,13 @@ if __name__ == '__main__':
     model_name = args.model_path
 
     dim_h = args.dim_h
+    id2x = [id2word, id2pos, id2tag]
 
     with tf.Graph().as_default():
         with tf.Session() as sess:
-            model = create_model_infnet_tlm(sess, dim_h, len(tag2id), len(pos2id), len(chunk2id), len(word2id), load_model, model_name) # create right model!
+            model = create_model_infnet_tlm(sess, dim_h, len(tag2id), len(pos2id), len(chunk2id), len(word2id), embeddings, load_model, model_name, args) # create right model!
             if True: # training
-                batches, _ = get_batches(x_train, y_train, pos_train, chunk_train, case_train, num_train, word2id, tag2id, pos2id, chunk2id, batch_size)
+                batches, _ = get_batches(x_train, y_train, pos_train, chunk_train, case_train, num_train, word2id, char2id, tag2id, pos2id, chunk2id, batch_size)
                 random.shuffle(batches)
 
                 start_time = time.time()
@@ -140,8 +144,9 @@ if __name__ == '__main__':
                                 feed_dict=feed_dict_tmp)
                             step_loss_psi, _ = sess.run([model.loss_psi, model.optimizer_psi],
                                 feed_dict=feed_dict_tmp)
-                            step_loss_theta, _ = sess.run([model.loss_theta, model.optimizer_theta],
-                                feed_dict=feed_dict_tmp)
+                            for _ in range(args.num_theta_steps):
+                                step_loss_theta, _ = sess.run([model.loss_theta, model.optimizer_theta],
+                                    feed_dict=feed_dict_tmp)
 
                             step += 1
                             loss_phi += step_loss_phi / steps_per_checkpoint
@@ -153,14 +158,14 @@ if __name__ == '__main__':
                                     % (step, time.time() - start_time, loss_phi, loss_psi, loss_theta))
                                 loss_phi, loss_psi, loss_theta = 0.0, 0.0, 0.0
                                 
-                                acc, _ = evaluate(sess, model, x_dev, y_dev, pos_dev, chunk_dev, case_dev, num_dev, word2id, tag2id, pos2id, chunk2id, batch_size)
+                                acc, _ = evaluate(sess, model, x_dev, y_dev, pos_dev, chunk_dev, case_dev, num_dev, word2id, char2id, tag2id, pos2id, chunk2id, batch_size)
                                 print('-- dev acc: %.2f' % acc)
 
 
 
-                                acc_dev, probs_dev, batches_dev, acc_y_dev, acc_y_hat_dev = evaluate_print(sess, model, x_dev, y_dev, pos_dev, chunk_dev, case_dev, num_dev, word2id, tag2id, pos2id, chunk2id, batch_size)
+                                acc_dev, probs_dev, batches_dev, acc_y_dev, acc_y_hat_dev = evaluate_print(sess, model, x_dev, y_dev, pos_dev, chunk_dev, case_dev, num_dev, word2id, char2id, tag2id, pos2id, chunk2id, batch_size)
                                 print('-- dev acc: %.2f' % acc_dev)
-                                f1_dev = compute_f1(probs_dev, batches_dev, acc_y_dev, acc_y_hat_dev)
+                                f1_dev = compute_f1(probs_dev, batches_dev, acc_y_dev, acc_y_hat_dev, id2x)
 
                                 
                                 if f1_dev > best_dev:
@@ -169,20 +174,20 @@ if __name__ == '__main__':
                                     model.saver.save(sess, model_name)
                                     
                                     # can skip                         
-                                    acc_test, probs_test, batches_test, acc_y_test, acc_y_hat_test = evaluate_print(sess, model, x_test, y_test, pos_test, chunk_test, case_test, num_test, word2id, tag2id, pos2id, chunk2id, batch_size)
+                                    acc_test, probs_test, batches_test, acc_y_test, acc_y_hat_test = evaluate_print(sess, model, x_test, y_test, pos_test, chunk_test, case_test, num_test, word2id, char2id, tag2id, pos2id, chunk2id, batch_size)
                                     print('-- test acc: %.2f' % acc_test)
-                                    f1_test = compute_f1(probs_test, batches_test, acc_y_test, acc_y_hat_test)
+                                    f1_test = compute_f1(probs_test, batches_test, acc_y_test, acc_y_hat_test, id2x)
                                     print('-- test f1: %.2f' % f1_test)
                                     
                                 
-                    acc, _ = evaluate(sess, model, x_train, y_train, pos_train, chunk_train, case_train, num_train, word2id, tag2id, pos2id, chunk2id,  batch_size)
+                    acc, _ = evaluate(sess, model, x_train, y_train, pos_train, chunk_train, case_train, num_train, word2id, char2id, tag2id, pos2id, chunk2id,  batch_size)
                     print('-- train acc: %.2f' % acc)
 
-                    # acc, _ = evaluate(sess, model, x_dev, y_dev, pos_dev, chunk_dev, case_dev, num_dev, word2id, tag2id, pos2id, chunk2id,  batch_size)
+                    # acc, _ = evaluate(sess, model, x_dev, y_dev, pos_dev, chunk_dev, case_dev, num_dev, word2id, char2id, tag2id, pos2id, chunk2id,  batch_size)
                     # print('-- dev acc: %.2f' % acc)
-                    acc_dev, probs_dev, batches_dev, acc_y_dev, acc_y_hat_dev = evaluate_print(sess, model, x_dev, y_dev, pos_dev, chunk_dev, case_dev, num_dev, word2id, tag2id, pos2id, chunk2id, batch_size)
+                    acc_dev, probs_dev, batches_dev, acc_y_dev, acc_y_hat_dev = evaluate_print(sess, model, x_dev, y_dev, pos_dev, chunk_dev, case_dev, num_dev, word2id, char2id, tag2id, pos2id, chunk2id, batch_size)
                     print('-- dev acc: %.2f' % acc_dev)
-                    f1_dev = compute_f1(probs_dev, batches_dev, acc_y_dev, acc_y_hat_dev)
+                    f1_dev = compute_f1(probs_dev, batches_dev, acc_y_dev, acc_y_hat_dev, id2x)
                     print('-- dev f1: %.2f' % f1_dev)
 
 
@@ -192,9 +197,9 @@ if __name__ == '__main__':
                         model.saver.save(sess, model_name)
 
                         # can skip
-                        acc_test, probs_test, batches_test, acc_y_test, acc_y_hat_test = evaluate_print(sess, model, x_test, y_test, pos_test, chunk_test, case_test, num_test, word2id, tag2id, pos2id, chunk2id, batch_size)
+                        acc_test, probs_test, batches_test, acc_y_test, acc_y_hat_test = evaluate_print(sess, model, x_test, y_test, pos_test, chunk_test, case_test, num_test, word2id, char2id, tag2id, pos2id, chunk2id, batch_size)
                         print('-- test acc: %.2f' % acc_test)
-                        f1_test = compute_f1(probs_test, batches_test, acc_y_test, acc_y_hat_test)
+                        f1_test = compute_f1(probs_test, batches_test, acc_y_test, acc_y_hat_test, id2x)
                         print('-- test f1: %.2f' % f1_test)
                     
 

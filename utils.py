@@ -69,7 +69,7 @@ def convert_tag_to_id(X, which):
 
 
 
-def preprocess_data_according_to_rules(data):
+def preprocess_data_according_to_rules(data, embedding_old):
     for i in range(len(data)):
         if len(data[i]) > 0:
             if not data[i][0].islower():
@@ -114,8 +114,8 @@ def preprocess_data_according_to_rules(data):
 
 
 
-def construct_word_id():
-    data = train_data+dev_data+test_data
+def construct_word_id(data):
+    # data = train_data+dev_data+test_data
     word2id = {'<pad>':0,'<s>':1,'</s>':2} # UUUNKKK replaced by unk
     id2word = ['<pad>','<s>','</s>']
     for i in range(len(data)):
@@ -188,7 +188,7 @@ def turn_data_into_x_y(dataset, word2id):
 
 
 
-def construct_embedding_char():
+def construct_embedding_char(id2char):
     embedding_char = np.zeros((len(id2char), 16))
     return embedding_char
     
@@ -250,7 +250,7 @@ def create_model(sess, dim_h, n_tag, load_model=False, model_path=''):
 ### spen infnet + tlm
 
 
-def get_batch(x, y, pos, chunk, case, num, word2id, tag2id, pos2id, chunk2id):
+def get_batch(x, y, pos, chunk, case, num, word2id, char2id, tag2id, pos2id, chunk2id):
     pad = word2id['<pad>']
     pad_tag = tag2id['<pad>']
     inputs_x, outputs_y, tlm_outputs_y, weights, tlm_weights, tlm_targets_pos = [], [], [], [], [], []
@@ -368,7 +368,7 @@ def get_batch(x, y, pos, chunk, case, num, word2id, tag2id, pos2id, chunk2id):
             'size': len(x),
             'perturb': s}
 
-def get_batches(x, y, pos, chunk, case, num, word2id, tag2id, pos2id, chunk2id, batch_size):
+def get_batches(x, y, pos, chunk, case, num, word2id, char2id, tag2id, pos2id, chunk2id, batch_size):
     n = len(x)
     order = range(n)
     z = sorted(zip(order, x, y, pos, chunk, case, num), key=lambda i: len(i[1]))
@@ -380,7 +380,7 @@ def get_batches(x, y, pos, chunk, case, num, word2id, tag2id, pos2id, chunk2id, 
         t = min(s + batch_size, n)
         if (s-t) < batch_size:
             s = t-batch_size
-        batches.append(get_batch(x[s:t], y[s:t], pos[s:t], chunk[s:t], case[s:t], num[s:t], word2id, tag2id, pos2id, chunk2id))
+        batches.append(get_batch(x[s:t], y[s:t], pos[s:t], chunk[s:t], case[s:t], num[s:t], word2id, char2id, tag2id, pos2id, chunk2id))
         s = t
 
     return batches, order

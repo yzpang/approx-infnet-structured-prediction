@@ -1,1 +1,1 @@
-python infnet.py --load_model False --train ./data/ner-data/eng.train.bioes.conll --dev ./data/ner-data/eng.dev.bioes.conll  --test ./data/ner-data/eng.test.bioes.conll --embedding /share/data/speech/Data/zeweichu/GloVe/glove.6B.100d.txt --model_path ../checkpoint/git_try/2018-08-14-ner-series-lstm-char
+python train.py --load_model False --train ./data/ner-data/eng.train.bioes.conll --dev ./data/ner-data/eng.dev.bioes.conll  --test ./data/ner-data/eng.test.bioes.conll --embedding ../GloVe/glove.6B.100d.txt --model_path ../checkpoint/git_try/2018-08-14-ner-series-lstm-char
