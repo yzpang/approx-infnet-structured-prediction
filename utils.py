@@ -246,9 +246,6 @@ def create_model(sess, dim_h, n_tag, load_model=False, model_path=''):
 
 
 
-
-
-
 ### SPEN
 ### spen infnet + tlm
 
@@ -472,19 +469,6 @@ def cnn(inp, scope, reuse=False):
             logits = tf.reshape(tf.matmul(outputs, W) + b, [-1, 16])
 
     return logits
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

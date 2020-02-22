@@ -243,3 +243,39 @@ def evaluate_print(sess, model, x, y, pos, chunk, case, num, word2id, tag2id, po
 
 
 
+
+
+
+def comnpute_f1(probs_test, batches_test, acc_y_test, acc_y_hat_test):
+    store_lst = []
+    for bn in range(len(batches_test)):
+        batch = batches_test[bn]
+        for i in range(batch['len']):
+            store_word_id = batch['enc_inputs'][0][i]
+            if store_word_id not in [1,2]:
+                store_word = id2word[store_word_id]
+                store_pos = id2pos[batch['inputs_pos'][0][i]]
+                store_real_tag = id2tag[acc_y_test[bn][i]]
+                store_predicted_tag = id2tag[acc_y_hat_test[bn][i]]
+                store_lst.append([store_word,store_pos,store_real_tag,store_predicted_tag])
+        store_lst.append([])
+
+    write_file_name = 'ner_eval_outputs.txt'
+    with open(write_file_name, 'w') as f:
+        for x in store_lst:
+            if len(x) == 0:
+                f.write('\n')
+            else:
+                assert len(x) == 4
+                write_str = x[0] + ' ' + x[1] + ' ' + x[2] + ' ' + x[3]
+                f.write(write_str+'\n')
+                
+    bash_command = 'perl conlleval < ' + write_file_name + ' > bash_result.out'
+    output = subprocess.check_output(['bash','-c', bash_command])
+    with open('bash_result.out') as f:
+        tmp = f.readlines()
+
+    return float(tmp[1][-6:-1])
+
+
+

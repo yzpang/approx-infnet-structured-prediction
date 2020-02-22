@@ -109,10 +109,7 @@ if __name__ == '__main__':
 
     with tf.Graph().as_default():
         with tf.Session() as sess:
-
-            # model = create_model_infnet(sess, 100, len(tag2id)) # use 100
             model = create_model_infnet_tlm(sess, dim_h, len(tag2id), len(pos2id), len(chunk2id), len(word2id), load_model, model_name) # create right model!
-            
             if True: # training
                 batches, _ = get_batches(x_train, y_train, pos_train, chunk_train, case_train, num_train, word2id, tag2id, pos2id, chunk2id, batch_size)
                 random.shuffle(batches)
@@ -139,115 +136,70 @@ if __name__ == '__main__':
     #                         print(tmp0, tmp1)
     #                         ###
                             
-
                             step_loss_phi, _ = sess.run([model.loss_phi, model.optimizer_phi],
                                 feed_dict=feed_dict_tmp)
-    #                         step_loss_psi, _ = sess.run([model.loss_psi, model.optimizer_psi],
-    #                             feed_dict=feed_dict_tmp)
-    #                         step_loss_theta, _ = sess.run([model.loss_theta, model.optimizer_theta],
-    #                             feed_dict=feed_dict_tmp)
+                            step_loss_psi, _ = sess.run([model.loss_psi, model.optimizer_psi],
+                                feed_dict=feed_dict_tmp)
+                            step_loss_theta, _ = sess.run([model.loss_theta, model.optimizer_theta],
+                                feed_dict=feed_dict_tmp)
 
                             step += 1
                             loss_phi += step_loss_phi / steps_per_checkpoint
-                            loss_psi += 0 #step_loss_psi / steps_per_checkpoint
-                            loss_theta += 0 #step_loss_theta / steps_per_checkpoint
+                            loss_psi += step_loss_psi / steps_per_checkpoint
+                            loss_theta += step_loss_theta / steps_per_checkpoint
 
                             if step % steps_per_checkpoint == 0:
                                 print('step %d, time %.0fs, loss_phi %.2f, loss_psi %.2f, loss_theta %.2f' \
                                     % (step, time.time() - start_time, loss_phi, loss_psi, loss_theta))
                                 loss_phi, loss_psi, loss_theta = 0.0, 0.0, 0.0
                                 
-                    
-    #                print('------ ... -> saving model...')
-    #                model.saver.save(sess, model_name)
-                    
-                                #acc, _ = evaluate(sess, model, x_dev, y_dev, word2id, tag2id, batch_size)
-                                #print('-- dev acc: %.2f' % acc)
-                
-                            if step % (2*steps_per_checkpoint) == 0: # MODIFY LATER
                                 acc, _ = evaluate(sess, model, x_dev, y_dev, pos_dev, chunk_dev, case_dev, num_dev, word2id, tag2id, pos2id, chunk2id, batch_size)
                                 print('-- dev acc: %.2f' % acc)
 
 
 
-
-
-
-                                acc, probs_test, batches_test, acc_y_test, acc_y_hat_test = evaluate_print(sess, model, x_test, y_test, pos_test, chunk_test, case_test, num_test, word2id, tag2id, pos2id, chunk2id, batch_size)
-                                #acc, probs_test, batches_test, acc_y_test, acc_y_hat_test = evaluate_print(sess, model, x_dev, y_dev, pos_dev, chunk_dev, case_dev, num_dev, word2id, tag2id, pos2id, chunk2id, batch_size)
-                                #print('-- dev acc: %.2f' % acc)
-
-                                store_lst = []
-                                for bn in range(len(batches_test)):
-                                    batch = batches_test[bn]
-                                    for i in range(batch['len']):
-                                        store_word_id = batch['enc_inputs'][0][i]
-                                        if store_word_id not in [1,2]:
-                                            store_word = id2word[store_word_id]
-                                            store_pos = id2pos[batch['inputs_pos'][0][i]]
-                                            store_real_tag = id2tag[acc_y_test[bn][i]]
-                                            store_predicted_tag = id2tag[acc_y_hat_test[bn][i]]
-                                            store_lst.append([store_word,store_pos,store_real_tag,store_predicted_tag])
-                                    store_lst.append([])
-          
-                                write_file_name = 'ner_eval_outputs.txt'
-                                with open(write_file_name, 'w') as f:
-                                    for x in store_lst:
-                                        if len(x) == 0:
-                                            f.write('\n')
-                                        else:
-                                            assert len(x) == 4
-                                            write_str = x[0] + ' ' + x[1] + ' ' + x[2] + ' ' + x[3]
-                                            f.write(write_str+'\n')
-                                            
-                                bash_command = 'perl conlleval < ' + write_file_name + ' > bash_result.out'
-                                output = subprocess.check_output(['bash','-c', bash_command])
-                                with open('bash_result.out') as f:
-                                    tmp = f.readlines()
-                                    print("F1 test:")
-                                    print(float(tmp[1][-6:-1]))
-
-
-
-
-
-
-
-
-
+                                acc_dev, probs_dev, batches_dev, acc_y_dev, acc_y_hat_dev = evaluate_print(sess, model, x_dev, y_dev, pos_dev, chunk_dev, case_dev, num_dev, word2id, tag2id, pos2id, chunk2id, batch_size)
+                                print('-- dev acc: %.2f' % acc_dev)
+                                f1_dev = compute_f1(probs_dev, batches_dev, acc_y_dev, acc_y_hat_dev)
 
                                 
-                                if acc > best_dev:
-                                    best_dev = acc
+                                if f1_dev > best_dev:
+                                    best_dev = f1_dev
                                     print('------ best dev acc so far -> saving model...')
                                     model.saver.save(sess, model_name)
                                     
-                                    acc, _ = evaluate(sess, model, x_test, y_test, pos_test, chunk_test, case_test, num_test, word2id, tag2id, pos2id, chunk2id,  batch_size)
-                                    print('-- test acc: %.2f' % acc)
+                                    # can skip                         
+                                    acc_test, probs_test, batches_test, acc_y_test, acc_y_hat_test = evaluate_print(sess, model, x_test, y_test, pos_test, chunk_test, case_test, num_test, word2id, tag2id, pos2id, chunk2id, batch_size)
+                                    print('-- test acc: %.2f' % acc_test)
+                                    f1_test = compute_f1(probs_test, batches_test, acc_y_test, acc_y_hat_test)
+                                    print('-- test f1: %.2f' % f1_test)
                                     
                                 
                     acc, _ = evaluate(sess, model, x_train, y_train, pos_train, chunk_train, case_train, num_train, word2id, tag2id, pos2id, chunk2id,  batch_size)
                     print('-- train acc: %.2f' % acc)
 
-                    acc, _ = evaluate(sess, model, x_dev, y_dev, pos_dev, chunk_dev, case_dev, num_dev, word2id, tag2id, pos2id, chunk2id,  batch_size)
-                    print('-- dev acc: %.2f' % acc)
-                    
+                    # acc, _ = evaluate(sess, model, x_dev, y_dev, pos_dev, chunk_dev, case_dev, num_dev, word2id, tag2id, pos2id, chunk2id,  batch_size)
+                    # print('-- dev acc: %.2f' % acc)
+                    acc_dev, probs_dev, batches_dev, acc_y_dev, acc_y_hat_dev = evaluate_print(sess, model, x_dev, y_dev, pos_dev, chunk_dev, case_dev, num_dev, word2id, tag2id, pos2id, chunk2id, batch_size)
+                    print('-- dev acc: %.2f' % acc_dev)
+                    f1_dev = compute_f1(probs_dev, batches_dev, acc_y_dev, acc_y_hat_dev)
+                    print('-- dev f1: %.2f' % f1_dev)
 
-                    if acc > best_dev:
-                        best_dev = acc
-                        print('------ best dev acc so far -> saving model...')
+
+                    if f1_dev > best_dev:
+                        best_dev = f1_dev
+                        print('------ best dev f1 so far -> saving model...')
                         model.saver.save(sess, model_name)
-                        
-                        acc, _ = evaluate(sess, model, x_test, y_test, pos_test, chunk_test, case_test, num_test, word2id, tag2id, pos2id, chunk2id,  batch_size)
-                        print('-- test acc: %.2f' % acc)
+
+                        # can skip
+                        acc_test, probs_test, batches_test, acc_y_test, acc_y_hat_test = evaluate_print(sess, model, x_test, y_test, pos_test, chunk_test, case_test, num_test, word2id, tag2id, pos2id, chunk2id, batch_size)
+                        print('-- test acc: %.2f' % acc_test)
+                        f1_test = compute_f1(probs_test, batches_test, acc_y_test, acc_y_hat_test)
+                        print('-- test f1: %.2f' % f1_test)
                     
 
-                    if int(time.time()-start_time) > 13000:
-                        print('=== saving model after 13000 seconds -> saving')
-                        model.saver.save(sess, model_name+'-contd')
-
-
-
-
-
+                    # suppose slurm has strict time limit; generally not needed
+                    # if int(time.time()-start_time) > 13000:
+                    #     print('=== saving model after 13000 seconds -> saving')
+                    #     model.saver.save(sess, model_name+'-contd')
 
