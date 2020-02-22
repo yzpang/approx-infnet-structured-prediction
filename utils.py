@@ -53,10 +53,6 @@ def load_embedding(emb_file):
 
 
 
-
-
-
-
 def convert_tag_to_id(X, which):
     tag2id = {'<pad>':0, '<s>':1, '</s>':2}
     id2tag = ['<pad>', '<s>', '</s>']
@@ -70,21 +66,6 @@ def convert_tag_to_id(X, which):
                 tag2id[tmp] = len(tag2id)
                 id2tag.append(tmp)
     return (tag2id, id2tag)
-
-tag2id, id2tag = convert_tag_to_id(train_data+dev_data+test_data, 3)
-pos2id, id2pos = convert_tag_to_id(train_data+dev_data+test_data, 1)
-chunk2id, id2chunk = convert_tag_to_id(train_data+dev_data+test_data, 2)
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -131,20 +112,6 @@ def preprocess_data_according_to_rules(data):
 
 
 
-train_data = preprocess_data_according_to_rules(train_data)
-dev_data = preprocess_data_according_to_rules(dev_data)
-test_data = preprocess_data_according_to_rules(test_data)
-
-
-
-
-
-
-
-
-
-
-
 
 
 def construct_word_id():
@@ -160,16 +127,9 @@ def construct_word_id():
     return word2id, id2word
 
 
-word2id, id2word = construct_word_id() # 6603 vocab size
-len(word2id)
 
 
-
-
-
-
-
-def construct_embedding(embedding_size, dim_emb):
+def construct_embedding(embedding_size, dim_emb, embedding_old, word2id):
     #embedding = np.random.random_sample((embedding_size, dim_emb)) - 0.5
     embedding = np.zeros((embedding_size, dim_emb))
     for word in word2id:
@@ -178,16 +138,6 @@ def construct_embedding(embedding_size, dim_emb):
         except:
             print(word)
     return embedding
-
-embedding_global = construct_embedding(len(word2id), 100) # 300 from GloVe
-
-
-
-
-
-
-
-
 
 
 
@@ -225,24 +175,15 @@ def turn_data_into_x_y(dataset, word2id):
     return x, y, pos, chunk, case, num
 
 
-x_train, y_train, pos_train, chunk_train, case_train, num_train = turn_data_into_x_y(train_data, word2id)
-x_dev, y_dev, pos_dev, chunk_dev, case_dev, num_dev = turn_data_into_x_y(dev_data, word2id)
-x_test, y_test, pos_test, chunk_test, case_test, num_test = turn_data_into_x_y(test_data, word2id)
 
 
 
 
-
-
-
-
-
-
-all_chars = ['<padunk>']+list(string.punctuation+string.ascii_uppercase+string.ascii_lowercase+string.digits)
-id2char = all_chars
-char2id = {}
-for x in all_chars:
-    char2id[x] = all_chars.index(x)
+# all_chars = ['<padunk>']+list(string.punctuation+string.ascii_uppercase+string.ascii_lowercase+string.digits)
+# id2char = all_chars
+# char2id = {}
+# for x in all_chars:
+#     char2id[x] = all_chars.index(x)
 
 
 
@@ -251,7 +192,9 @@ def construct_embedding_char():
     embedding_char = np.zeros((len(id2char), 16))
     return embedding_char
     
-embedding_char_global = construct_embedding_char()
+# embedding_char_global = construct_embedding_char()
+
+
 
 
 
@@ -285,15 +228,15 @@ def create_model(sess, dim_h, n_tag, load_model=False, model_path=''):
     
     return model
 
-def feed_dictionary(model, batch, dropout, learning_rate=None):
-    feed_dict = {model.dropout: dropout,
-                 model.learning_rate: learning_rate,
-                 model.batch_len: batch['len'],
-                 model.batch_size: batch['size'],
-                 model.enc_inputs: batch['enc_inputs'],
-                 model.targets: batch['targets'],
-                 model.weights: batch['weights']}
-    return feed_dict
+# def feed_dictionary(model, batch, dropout, learning_rate=None):
+#     feed_dict = {model.dropout: dropout,
+#                  model.learning_rate: learning_rate,
+#                  model.batch_len: batch['len'],
+#                  model.batch_size: batch['size'],
+#                  model.enc_inputs: batch['enc_inputs'],
+#                  model.targets: batch['targets'],
+#                  model.weights: batch['weights']}
+#     return feed_dict
 
 
 
@@ -306,14 +249,8 @@ def feed_dictionary(model, batch, dropout, learning_rate=None):
 
 
 
-
-
-
-
-# SPEN
-
-
-# spen infnet + tlm
+### SPEN
+### spen infnet + tlm
 
 
 def get_batch(x, y, pos, chunk, case, num, word2id, tag2id, pos2id, chunk2id):
@@ -460,15 +397,6 @@ def get_batches(x, y, pos, chunk, case, num, word2id, tag2id, pos2id, chunk2id, 
 
 
 
-
-
-
-
-
-
-
-
-
 def feed_dictionary(model, batch, dropout, learning_rate=None):
     feed_dict = {model.dropout: dropout,
                  model.learning_rate: learning_rate,
@@ -508,16 +436,13 @@ def create_cell_gru(dim, dropout):
 
 
 
-
-
-
 def leaky_relu(x, alpha=0.01):
     return tf.maximum(alpha * x, x)
 
 def cnn(inp, scope, reuse=False):
-    filter_sizes = [2,3]
-    n_filters = 64
-    dropout = 0.7
+    filter_sizes = [2,3] # hyperparameters
+    n_filters = 64 # hyperparameters
+    dropout = 0.7 # hyperparameters
     dim = inp.get_shape().as_list()[-1]
     inp = tf.expand_dims(inp, -1)
     num_words = inp.get_shape().as_list()[0]

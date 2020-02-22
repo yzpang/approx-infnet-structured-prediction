@@ -18,8 +18,6 @@ from evaluate import *
 
 
 
-
-
 # InfNet
 
 class InfNet_TLM(object):
@@ -282,38 +280,6 @@ class InfNet_TLM(object):
         
         
         
-        
-        
-        
-        
-        
-#         log_likelihood, transition_params = tf.contrib.crf.crf_log_likelihood(
-#             tf.expand_dims(self.phi_logits), self.targets, self.batch_size)
-
-#         self.loss_crf = tf.reduce_mean(-log_likelihood)
-        
-        
-#         labels_pred = tf.cast(tf.argmax(self.logits, axis=-1), tf.int32)
-#         self.viterbi_sequence, self.viterbi_score = tf.contrib.crf.viterbi_decode(
-#             tf.expand_dims(self.phi_logits), transition_params)
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
 
 
 
@@ -321,35 +287,6 @@ class InfNet_TLM(object):
 
         phi_probs_for_input = tf.reshape(self.phi_probs, [self.batch_size, self.batch_len, tag_size])
         phi_probs_for_input_reverse = tf.reshape(self.phi_probs[::-1,:], [self.batch_size, self.batch_len, tag_size])
-
-#         with tf.variable_scope('tlm', reuse=True):
-#             outputs_tlm_eval, _ = tf.nn.dynamic_rnn(cell_gru, 
-#                                                tf.concat([inputs,phi_probs_for_input,inputs_pos_onehot], axis=-1), # [inputs,y_onehot_tlm]
-#                                                dtype=tf.float32, scope='tlm')
-#             outputs_tlm_eval = tf.nn.dropout(outputs_tlm_eval, self.dropout)
-#             outputs_tlm_eval = tf.reshape(outputs_tlm_eval, [-1, dim_h])
-
-#             self.logits_tlm_tmp_eval = tf.matmul(outputs_tlm_eval, proj_tlm_W) + proj_tlm_b
-#             self.logits_tlm_eval = self.logits_tlm_tmp_eval[:,pos_size:] # FIX!!!!!!!!!
-#             self.logits_pos_eval = self.logits_tlm_tmp_eval[:,:pos_size]
-            
-#             self.probs_tlm_eval = tf.nn.softmax(self.logits_tlm_eval)
-#             self.probs_pos_eval = tf.nn.softmax(self.logits_pos_eval)
-            
-#         with tf.variable_scope('tlm_reverse', reuse=True):
-#             outputs_tlm_reverse_eval, _ = tf.nn.dynamic_rnn(cell_gru_reverse, 
-#                                                tf.concat([inputs_reverse,phi_probs_for_input_reverse,inputs_pos_onehot_reverse], axis=-1), # [inputs,y_onehot_tlm]
-#                                                dtype=tf.float32, scope='tlm_reverse')
-#             outputs_tlm_reverse_eval = tf.nn.dropout(outputs_tlm_reverse_eval, self.dropout)
-#             outputs_tlm_reverse_eval = tf.reshape(outputs_tlm_reverse_eval, [-1, dim_h])
-
-            
-#             self.logits_tlm_tmp_reverse_eval = tf.matmul(outputs_tlm_reverse_eval, proj_tlm_W_reverse) + proj_tlm_b_reverse
-#             self.logits_tlm_reverse_eval = self.logits_tlm_tmp_reverse_eval[:,pos_size:] # FIX!!!!!!!!!
-#             self.logits_pos_reverse_eval = self.logits_tlm_tmp_reverse_eval[:,:pos_size]
-            
-#             self.probs_tlm_reverse_eval = tf.nn.softmax(self.logits_tlm_reverse_eval)
-#             self.probs_pos_reverse_eval = tf.nn.softmax(self.logits_pos_reverse_eval)
 
 
 
@@ -430,37 +367,6 @@ class InfNet_TLM(object):
             tmp1 = tf.multiply(tf.matmul(y_prime, energy_W), y[1:]) # first y is tricky
             energy_second_part = tf.reduce_sum(tmp1)
             old_return = -(energy_first_part+energy_second_part)
-            
-            
-#             # now implement E_TLM
-#             tmp_energy_tlm = -tf.log(tf.reduce_sum(tf.multiply(y[1:-1],self.probs_tlm_eval[:-2]), axis=-1))
-#             tmp_energy_tlm = tf.reduce_sum(tmp_energy_tlm)
-#             old_return += 0.075 * tmp_energy_tlm
-        
-            
-#             tmp_energy_tlm_reverse = -tf.log(tf.reduce_sum(tf.multiply(y[::-1][1:-1],self.probs_tlm_reverse_eval[:-2]), axis=-1))
-#             tmp_energy_tlm_reverse = tf.reduce_sum(tmp_energy_tlm_reverse)
-#             old_return += 0.075 * tmp_energy_tlm_reverse
-            
-
-
-
-
-
-#             # pos_energy_tlm = -tf.log(tf.reduce_sum(tf.multiply(self.probs_pos_eval[:-2], self.probs_pos[:-2]), axis=-1))
-#             # pos_energy_tlm = tf.reduce_sum(pos_energy_tlm)
-#             # old_return += 0.075 * pos_energy_tlm
-
-#             # pos_energy_tlm_reverse = -tf.log(tf.reduce_sum(tf.multiply(self.probs_pos_reverse_eval[:-2], self.probs_pos_reverse[:-2]), axis=-1))
-#             # pos_energy_tlm_reverse = tf.reduce_sum(pos_energy_tlm_reverse)
-#             # old_return += 0.075 * pos_energy_tlm_reverse
-
-#             pos_energy_tlm = -tf.log(tf.reduce_sum(tf.multiply(self.probs_pos_eval[:-2], self.probs_pos_reverse_eval[:-2][::-1]), axis=-1))
-#             pos_energy_tlm = tf.reduce_sum(pos_energy_tlm)
-#             old_return += 0.10 * pos_energy_tlm
-
-
-
 
 
             return old_return
@@ -483,38 +389,6 @@ class InfNet_TLM(object):
             energy_second_part = tf.reduce_sum(tmp1)
             old_return = -(energy_first_part+energy_second_part)
             
-            
-#             # now implement E_TLM
-#             tmp_energy_tlm = -tf.log(tf.reduce_sum(tf.multiply(y[1:-1],self.probs_tlm[:-2]), axis=-1))
-#             tmp_energy_tlm = tf.reduce_sum(tmp_energy_tlm)
-#             old_return += 0.075 * tmp_energy_tlm
-        
-            
-#             tmp_energy_tlm_reverse = -tf.log(tf.reduce_sum(tf.multiply(y[::-1][1:-1],self.probs_tlm_reverse[:-2]), axis=-1))
-#             tmp_energy_tlm_reverse = tf.reduce_sum(tmp_energy_tlm_reverse)
-#             old_return += 0.075 * tmp_energy_tlm_reverse
-            
-
-
-
-
-
-
-#             # pos_energy_tlm = -tf.log(tf.reduce_sum(tf.multiply(self.probs_pos[:-2], self.probs_pos[:-2]), axis=-1))
-#             # pos_energy_tlm = tf.reduce_sum(pos_energy_tlm)
-#             # old_return += 0.05 * pos_energy_tlm
-
-#             # pos_energy_tlm_reverse = -tf.log(tf.reduce_sum(tf.multiply(self.probs_pos_reverse[:-2], self.probs_pos_reverse[:-2]), axis=-1))
-#             # pos_energy_tlm_reverse = tf.reduce_sum(pos_energy_tlm_reverse)
-#             # old_return += 0.05 * pos_energy_tlm_reverse
-
-
-#             pos_energy_tlm = -tf.log(tf.reduce_sum(tf.multiply(self.probs_pos[:-2], self.probs_pos_reverse[:-2][::-1]), axis=-1))
-#             pos_energy_tlm = tf.reduce_sum(pos_energy_tlm)
-#             old_return += 0.10 * pos_energy_tlm
-
-
-
 
             return old_return
 
@@ -597,9 +471,6 @@ class InfNet_TLM(object):
         self.saver = tf.train.Saver()
         
         
-
-
-
 
 
 
