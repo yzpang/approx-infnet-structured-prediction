@@ -270,7 +270,7 @@ class InfNet_TLM(object):
             
 
         # affine transformation to get logits
-        self.phi_logits = tf.matmul(tf.concat([outputs], axis=-1), proj_W) + proj_b # shape is (batch_size(2)*batch_length, 28)
+        self.phi_logits = tf.matmul(tf.concat([outputs], axis=-1), proj_W) + proj_b # shape is (batch_size*batch_length, 28)
         self.phi_probs = tf.nn.softmax(self.phi_logits) # changed from sigmoid to softmax
         # But the thing is some of the logits do not count - we need to deal with it
         
@@ -361,7 +361,6 @@ class InfNet_TLM(object):
         def energy_result(self, x, y, y_unscale_logits, x_nextword_onehot, x_nextword_onehot_reverse, nextpos_onehot, nextpos_onehot_reverse):
 
         
-            # note that energy_feature_vec will be looped around twice with batch_size 2
             M0 = tf.matmul(energy_U, tf.transpose(energy_feature_vec)) 
             tmp0 = tf.multiply(y, tf.transpose(M0)) # elt-wise
             energy_first_part = tf.reduce_sum(tmp0)
@@ -369,7 +368,7 @@ class InfNet_TLM(object):
             #y_prime = tf.manip.roll(y, shift=1, axis=0)
             #y_prime = tf.concat([[tf.zeros([tag_size])], y_prime[1:]], axis=0) # check y has 28 as last dim
             
-            y_prime = y[:-1] # check y has 28 as last dim
+            y_prime = y[:-1] 
             tmp1 = tf.multiply(tf.matmul(y_prime, energy_W), y[1:]) # first y is tricky
             energy_second_part = tf.reduce_sum(tmp1)
             old_return = -(energy_first_part+energy_second_part)
@@ -378,7 +377,7 @@ class InfNet_TLM(object):
             return old_return
 
 
-
+        # should be the same function as above, but written here for convenience
         def energy_result_gold(self, x, y, y_unscale_logits, x_nextword_onehot, x_nextword_onehot_reverse, nextpos_onehot, nextpos_onehot_reverse):
 
         
@@ -390,7 +389,7 @@ class InfNet_TLM(object):
             #y_prime = tf.manip.roll(y, shift=1, axis=0)
             #y_prime = tf.concat([[tf.zeros([tag_size])], y_prime[1:]], axis=0) # check y has 28 as last dim
             
-            y_prime = y[:-1] # check y has 28 as last dim
+            y_prime = y[:-1] 
             tmp1 = tf.multiply(tf.matmul(y_prime, energy_W), y[1:]) # first y is tricky
             energy_second_part = tf.reduce_sum(tmp1)
             old_return = -(energy_first_part+energy_second_part)
